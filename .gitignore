@@ -5,3 +5,5 @@ Makefile
 code
 *.o
 *.log
+database.dat
+index.dat
