@@ -28,6 +28,15 @@ private:
     vector<int> hash_table;
     int free_list_head;
     
+    // Simple cache for recently accessed records
+    static const int CACHE_SIZE = 1000;
+    struct CacheEntry {
+        int pos;
+        Record rec;
+        bool valid;
+    };
+    CacheEntry cache[CACHE_SIZE];
+    
     int hash_function(const string& key) {
         unsigned long hash = 5381;
         for (char c : key) {
@@ -84,11 +93,30 @@ private:
     void write_record(int pos, const Record& rec) {
         data_file.seekp(pos * RECORD_SIZE);
         data_file.write(reinterpret_cast<const char*>(&rec), sizeof(Record));
+        
+        // Update cache
+        int cache_idx = pos % CACHE_SIZE;
+        cache[cache_idx].pos = pos;
+        cache[cache_idx].rec = rec;
+        cache[cache_idx].valid = true;
     }
     
     void read_record(int pos, Record& rec) {
+        // Check cache first
+        int cache_idx = pos % CACHE_SIZE;
+        if (cache[cache_idx].valid && cache[cache_idx].pos == pos) {
+            rec = cache[cache_idx].rec;
+            return;
+        }
+        
+        // Read from file
         data_file.seekg(pos * RECORD_SIZE);
         data_file.read(reinterpret_cast<char*>(&rec), sizeof(Record));
+        
+        // Update cache
+        cache[cache_idx].pos = pos;
+        cache[cache_idx].rec = rec;
+        cache[cache_idx].valid = true;
     }
     
 public:
@@ -101,6 +129,11 @@ public:
             data_file.open(DATA_FILE, ios::out | ios::binary | ios::trunc);
             data_file.close();
             data_file.open(DATA_FILE, ios::in | ios::out | ios::binary);
+        }
+        
+        // Initialize cache
+        for (int i = 0; i < CACHE_SIZE; i++) {
+            cache[i].valid = false;
         }
     }
     
