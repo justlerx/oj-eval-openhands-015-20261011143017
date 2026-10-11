@@ -12,7 +12,7 @@ using namespace std;
 const string DATA_FILE = "database.dat";
 const string INDEX_FILE = "index.dat";
 const int MAX_INDEX_LEN = 64;
-const int HASH_TABLE_SIZE = 10007; // Prime number for better distribution
+const int HASH_TABLE_SIZE = 32749; // Medium prime number for better distribution
 const int RECORD_SIZE = MAX_INDEX_LEN + sizeof(int) + sizeof(int); // index + value + next_ptr
 
 struct Record {
@@ -119,7 +119,7 @@ public:
         int prev_ptr = -1;
         int curr_ptr = hash_table[hash_val];
         
-        // Check if record already exists and find insertion point
+        // Check if record already exists
         while (curr_ptr != -1) {
             Record rec;
             read_record(curr_ptr, rec);
@@ -130,37 +130,16 @@ public:
             curr_ptr = rec.next_ptr;
         }
         
-        // Insert new record in sorted order by value
+        // Insert new record
         Record new_rec;
         strncpy(new_rec.index, index.c_str(), MAX_INDEX_LEN - 1);
         new_rec.index[MAX_INDEX_LEN - 1] = '\0';
         new_rec.value = value;
+        new_rec.next_ptr = hash_table[hash_val];
         
-        // Find correct position to maintain sorted order
-        prev_ptr = -1;
-        curr_ptr = hash_table[hash_val];
-        while (curr_ptr != -1) {
-            Record rec;
-            read_record(curr_ptr, rec);
-            if (strcmp(rec.index, index.c_str()) == 0 && rec.value > value) {
-                break; // Insert before this record
-            }
-            prev_ptr = curr_ptr;
-            curr_ptr = rec.next_ptr;
-        }
-        
-        new_rec.next_ptr = curr_ptr;
         int new_pos = allocate_record();
         write_record(new_pos, new_rec);
-        
-        if (prev_ptr == -1) {
-            hash_table[hash_val] = new_pos;
-        } else {
-            Record prev_rec;
-            read_record(prev_ptr, prev_rec);
-            prev_rec.next_ptr = new_pos;
-            write_record(prev_ptr, prev_rec);
-        }
+        hash_table[hash_val] = new_pos;
     }
     
     void remove(const string& index, int value) {
@@ -205,7 +184,7 @@ public:
             curr_ptr = rec.next_ptr;
         }
         
-        // Records are already sorted by value due to insert logic
+        sort(result.begin(), result.end());
         return result;
     }
 };
