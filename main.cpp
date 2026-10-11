@@ -29,7 +29,7 @@ private:
     int free_list_head;
     
     // Simple cache for recently accessed records
-    static const int CACHE_SIZE = 1000;
+    static const int CACHE_SIZE = 5000;
     struct CacheEntry {
         int pos;
         Record rec;
@@ -38,9 +38,9 @@ private:
     CacheEntry cache[CACHE_SIZE];
     
     int hash_function(const string& key) {
-        unsigned long hash = 5381;
+        unsigned long hash = 0;
         for (char c : key) {
-            hash = ((hash << 5) + hash) + c;
+            hash = hash * 31 + c;
         }
         return hash % HASH_TABLE_SIZE;
     }
